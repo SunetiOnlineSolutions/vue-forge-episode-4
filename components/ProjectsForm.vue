@@ -19,6 +19,8 @@ const project = ref({
   endDate: sixMonthsFromNow
 });
 
+const { defineComponentBinds } = useForm();
+
 function submit() {
   const { title, description, image, category, softCap, hardCap, startDate, endDate } = project.value;
   alert(`Submitting ${title} ${description} ${image} ${category} ${softCap} ${hardCap} ${startDate} ${endDate}`);
