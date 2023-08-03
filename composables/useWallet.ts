@@ -100,12 +100,23 @@ export function useWallet() {
 
   const getBalance = async () => {
     if (account.value) {
-      // Exercise 1 starts here
-      // Use the Kadena Client to get the balance
-
-      balance.value = "40";
+// Exercise 1 starts here
+// Use the Kadena Client to get the balance
+      const getBalanceTx = Pact.builder.execution(
+          Pact.modules.coin['get-balance'](account.value)
+      )
+          .setMeta({ chainId: "0", sender: account.value })
+          .setNetworkId('fast-development')
+          .createTransaction();
+      const client = getClient(
+          ({ chainId, networkId }) =>
+              `http://127.0.0.1:8080/chainweb/0.0/fast-development/chain/${chainId}/pact`
+      )
+      const commandResult = await client.dirtyRead(getBalanceTx);
+      if (commandResult.result.status === 'success') {
+        balance.value = commandResult.result.data as string;
+      }
     }
-
     return balance.value;
   };
 
