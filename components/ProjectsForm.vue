@@ -32,22 +32,21 @@ function submit() {
       <fieldset class="space-y-4">
         <label for="title" class="block font-medium">What is your projects name?</label>
         <input type="text" id="title" name="title" required class="w-full p-2 border rounded-2xl" v-model="project.title">
-        <small>asdfasdf</small>
+        <small class="text-slate-400">Use a very handy title that people could identify your project</small>
 
-        <label for="description" class="block font-medium">Description:</label>
-        <textarea id="description" name="description" required class="w-full p-2 border rounded-2xl"
-          v-model="project.description"></textarea>
+        <label for="description" class="block font-medium">What is your project about?</label>
+        <textarea id="description" name="description" required class="w-full p-2 border rounded-2xl" v-model="project.description"></textarea>        
+        <small class="text-slate-400">Describe with full detail your project so that people understand exactly what it is about</small>
 
-        <label for="image" class="block font-medium">Image:</label>
-        <AppFileUpload bucket="projects" label="Upload an image" hint="Images must be smaller than 1MB" @file:uploaded="project.image = new File([$event], 'filename.jpg', { type: 'image/jpeg' })" />
+        <AppFileUpload bucket="projects" hint="Images must be smaller than 1MB" @file:uploaded="project.image = new File([$event], 'filename.jpg', { type: 'image/jpeg' })" />
         <!-- <input type="file" id="image" name="image" accept="image/*" required class="w-full p-2 border rounded-2xl"> -->
 
-        <label for="category" class="block font-medium">Category:</label>
+        <label for="category" class="block font-medium">Which category does your project fit in? </label>
         <select id="category" name="category" required class="w-full p-2 border rounded-2xl" v-model="project.category">
           <option v-for="category in categories" :key="category.uuid" :value="category.slug">{{ category.name }}</option>
         </select>
 
-        <label for="soft-cap" class="block font-medium">Soft Cap: <span class="flex justify-end"><Money :amount="project.softCap" currency="USD" sign="" /></span></label>
+        <label for="soft-cap" class="block font-medium">What is the soft cap of your project? <span class="flex justify-end"><Money :amount="project.softCap" currency="USD" sign="" /></span></label>
         <input type="range" id="soft-cap" min={0} max="100000" step="25000" className="range range-lg text-white" v-model="project.softCap" />
         <div class="w-full flex justify-between text-xs px-2">
           <span>|</span>
@@ -64,7 +63,7 @@ function submit() {
           <span>$100,000.00</span>
         </div>
 
-        <label for="hard-cap" class="block font-medium">Hard Cap: 
+        <label for="hard-cap" class="block font-medium">What is the hard cap of your project?
           <span class="flex justify-end">
             <Money :amount="project.hardCap" currency="USD" sign="" />
           </span>
