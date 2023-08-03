@@ -31,7 +31,6 @@ function submit() {
   <div class="p-8" style="width:40vw">
     <h1 class="text-2xl font-bold mb-4">Kickstart your own project</h1>
     <form @submit.prevent="submit" class="space-y-4">
-      <fieldset class="space-y-4">
         <label for="title" class="block font-medium">What is your projects name?</label>
         <input type="text" id="title" name="title" required class="w-full p-2 border rounded-2xl" v-model="project.title">
         <small class="text-slate-400">Use a very handy title that people could identify your project</small>
@@ -86,13 +85,16 @@ function submit() {
           <span>$100,000.00</span>
         </div>
 
-
-        <label for="start-date" class="block font-medium">Start Date:</label>
-        <input type="date" id="start-date" name="start-date" required class="w-full p-2 border rounded-2xl" v-model="project.startDate">
-
-        <label for="end-date" class="block font-medium">End Date:</label>
-        <input type="date" id="end-date" name="end-date" required class="w-full p-2 border rounded-2xl" v-model="project.endDate">
-      </fieldset>
+        <div class="grid md:grid-cols-2 md:gap-6">
+          <div class="relative z-0 w-full mb-6 group">
+            <label for="start-date" class="block font-medium">Start Date:</label>
+            <input type="date" id="start-date" name="start-date" required class="w-full p-2 border rounded-2xl" v-model="project.startDate">
+          </div>
+          <div class="relative z-0 w-full mb-6 group">
+            <label for="end-date" class="block font-medium">End Date:</label>
+            <input type="date" id="end-date" name="end-date" required class="w-full p-2 border rounded-2xl" v-model="project.endDate">
+          </div>
+        </div>
 
       <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-2xl hover:bg-blue-600">Create Project</button>
     </form>
