@@ -3,7 +3,7 @@ import {z} from "zod";
 
 const schema = toTypedSchema(z.object({
   title: z.string().nonempty('Title is rquired').min(3),
-  description: z.string().nonempty('Description is rquired').max(500),
+  description: z.string().nonempty('Description is rquired').min(3).max(500),
   image: z.string().nonempty('Image is rquired'),
   categoryUuid: z.string().nonempty('Category is rquired').uuid(),
   softCap: z.number(),
@@ -17,12 +17,21 @@ const { defineComponentBinds, values: project, setFieldValue , handleSubmit} = u
   initialValues:{
     title: "",
     description: "",
-    image: "https://cataas.com/cat",
+    image: "",
     categoryUuid: "",
     softCap: 10_000,
     hardCap: 25_000,
     startsAt: useDateFormat(new Date(), "YYYY-MM-DD").value,
     finishesAt: useDateFormat(getDateXMonthsFromNow(6), "YYYY-MM-DD").value,
+  },
+})
+
+const imageField = defineComponentBinds('image',{
+  mapProps(state){
+    return {
+      errorMessage: state.errors[0],
+      'onFile:uploaded': (file: string) => setFieldValue('image', file)
+    }
   },
 })
 
@@ -48,9 +57,10 @@ const category = computed(() => {
     (category) => category.uuid === project.categoryUuid
   );
 });
+const {success, error} = useAlerts();
 
-const submitForm = handleSubmit(async () => {
-  useAlerts().success("Project created");
+const submitForm = handleSubmit(async (values) => {
+  success("Project created");
 });
 </script>
 
@@ -66,7 +76,6 @@ const submitForm = handleSubmit(async () => {
           hint="Use a very handy title that people could identify your
                 project"
         />
-
         <FormField
           label="What is your project about?"
           name="description"
@@ -74,14 +83,12 @@ const submitForm = handleSubmit(async () => {
           hint="Describe with full detail your project so that people
                 understand exactly what it is about."
         />
-
         <AppFileUpload
           label="Upload a cover image for your project"
           bucket="projects"
-          @file:uploaded="project.image = $event"
+          v-bind="imageField"
           class="mb-4"
         />
-
         <FormField
           label="Which category does your project fit in?"
           as="select"
