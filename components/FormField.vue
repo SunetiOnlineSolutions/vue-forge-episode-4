@@ -13,8 +13,7 @@ const emit = defineEmits<{
   (e: "update:modelValue", payload: typeof props.modelValue): void;
 }>();
 
-const {value, errorMessage} = useField<string | number>(() => props.name, undefined,
-{
+const {value, handleChange, errorMessage} = useField<string | number>(() => props.name, undefined, {
     syncVModel: true,
 });
 
@@ -26,13 +25,16 @@ watch(
 
 // handle input attributes
 const id = computed(() => props.id || props.name);
+
 const classes = computed(() => {
   if (props.class) return props.class;
-  if (props.as === "select") return "select select-bordered";
-  if (props.as === "textarea") return "textarea textarea-bordered h-64";
-  return "input input-bordered";
+  if (props.as === "select") return `select select-bordered ${errorMessage.value ? "select-error" : ""}`;
+  if (props.as === "textarea") return `textarea textarea-bordered h-64 ${errorMessage.value ? "textarea-error" : ""}`;
+  return `input input-bordered ${errorMessage.value ? "input-error" : ""}`;
 });
+
 const $attrs = useAttrs();
+
 const fieldAttrs = computed(() => {
   return {
     id: props.id,
@@ -62,16 +64,16 @@ export default {
 
     <slot name="after-label"></slot>
 
-    <input v-if="!as" v-bind="fieldAttrs" v-model="value" />
+    <input v-if="!as" v-bind="fieldAttrs" @input="handleChange" :value="value" />
 
-    <select v-if="as === 'select'" v-bind="fieldAttrs" v-model="value">
+    <select v-if="as === 'select'" v-bind="fieldAttrs" @input="handleChange" :value="value">
       <slot></slot>
     </select>
 
     <textarea
       v-if="as === 'textarea'"
       v-bind="fieldAttrs"
-      v-model="value"
+      @input="handleChange" :value="value"
     ></textarea>
 
     <slot name="after-input"></slot>
