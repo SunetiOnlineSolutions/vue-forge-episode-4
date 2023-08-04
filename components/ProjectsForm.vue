@@ -60,9 +60,15 @@ const category = computed(() => {
 const {success, error} = useAlerts();
 
 const submitForm = handleSubmit(async (values) => {
-  alert(JSON.stringify(values, null, 2));
-  success("Project created");
-});
+    alert(JSON.stringify(values, null, 2));
+    success("Project created");
+  },
+  ({errors}) => {
+    const fireldName = Object.keys(errors)[0];
+    const el = document.querySelector(`[name="${fireldName}"]`);
+    el?.scrollIntoView({behavior: 'smooth', block: 'center'})
+  }
+)
 </script>
 
 <template>
