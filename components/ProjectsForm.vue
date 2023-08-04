@@ -1,101 +1,213 @@
 <script setup lang="ts">
-import { useCategories } from '@/composables/useCategories';
-import { ref } from 'vue';
+import {z} from "zod";
 
-// Get categories for dropdown
-const { list: categories, fetchAll } = useCategories();
-fetchAll();
+const schema = toTypedSchema(z.object({
+  title: z.string().nonempty('Title is rquired').min(3),
+  description: z.string().nonempty('Description is rquired').max(500),
+  image: z.string().nonempty('Image is rquired'),
+  categoryUuid: z.string().nonempty('Category is rquired').uuid(),
+  softCap: z.number(),
+  hardCap: z.number(),
+  startsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  finishesAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+}))
 
-const today = new Date().toISOString().slice(0, 10);
-const sixMonthsFromNow = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-const project = ref({
-  title: '',
-  description: '',
-  image: null as File | null,
-  category: '',
-  softCap: 10000,
-  hardCap: 25000,
-  startDate: today,
-  endDate: sixMonthsFromNow
+const { defineComponentBinds, values: project, setFieldValue , handleSubmit} = useForm({
+  validationSchema: schema,
+  initialValues:{
+    title: "",
+    description: "",
+    image: "https://cataas.com/cat",
+    categoryUuid: "",
+    softCap: 10_000,
+    hardCap: 25_000,
+    startsAt: useDateFormat(new Date(), "YYYY-MM-DD").value,
+    finishesAt: useDateFormat(getDateXMonthsFromNow(6), "YYYY-MM-DD").value,
+  },
+})
+
+watch([() => project.softCap], ([soft]) => {
+  if(soft === undefined || project.softCap === undefined) return;
+  if (soft > project.hardCap) {
+    const plus500 = soft + 5000;
+    setFieldValue("hardCap", plus500 < 10000 ? plus500 : soft);
+  }
+});
+watch([() => project.hardCap], ([hard]) => {
+  if(hard === undefined || project.hardCap === undefined) return;
+  if (project.softCap > hard) {
+    const minus500 = hard - 5000;
+    setFieldValue("softCap", minus500 < 0 ? hard : minus500);
+  }
 });
 
-const { defineComponentBinds } = useForm();
+const { list: categories, fetchAll } = useCategories();
+fetchAll();
+const category = computed(() => {
+  return categories.value.find(
+    (category) => category.uuid === project.categoryUuid
+  );
+});
 
-function submit() {
-  const { title, description, image, category, softCap, hardCap, startDate, endDate } = project.value;
-  alert(`Submitting ${title} ${description} ${image} ${category} ${softCap} ${hardCap} ${startDate} ${endDate}`);
-}
+const submitForm = handleSubmit(async () => {
+  useAlerts().success("Project created");
+});
 </script>
 
 <template>
-  <div class="p-8" style="width:40vw">
-    <h1 class="text-2xl font-bold mb-4">Kickstart your own project</h1>
-    <form @submit.prevent="submit" class="space-y-4">
-        <label for="title" class="block font-medium">What is your projects name?</label>
-        <input type="text" id="title" name="title" required class="w-full p-2 border rounded-2xl" v-model="project.title">
-        <small class="text-slate-400">Use a very handy title that people could identify your project</small>
+  <div class="w-full max-w-5xl mx-auto mb-20">
+    <h3 class="py-5 text-3xl">Kickstart your own project</h3>
 
-        <label for="description" class="block font-medium">What is your project about?</label>
-        <textarea id="description" name="description" required class="w-full p-2 border rounded-2xl" v-model="project.description"></textarea>        
-        <small class="text-slate-400">Describe with full detail your project so that people understand exactly what it is about</small>
+    <div class="grid grid-cols-12 gap-8">
+      <form @submit.prevent="submitForm" class="w-full col-span-8">
+        <FormField
+          label="What is your projects name?"
+          name="title"
+          hint="Use a very handy title that people could identify your
+                project"
+        />
 
-        <AppFileUpload bucket="projects" hint="Images must be smaller than 1MB" @file:uploaded="project.image = new File([$event], 'filename.jpg', { type: 'image/jpeg' })" />
-        <!-- <input type="file" id="image" name="image" accept="image/*" required class="w-full p-2 border rounded-2xl"> -->
+        <FormField
+          label="What is your project about?"
+          name="description"
+          as="textarea"
+          hint="Describe with full detail your project so that people
+                understand exactly what it is about."
+        />
 
-        <label for="category" class="block font-medium">Which category does your project fit in? </label>
-        <select id="category" name="category" required class="w-full p-2 border rounded-2xl" v-model="project.category">
-          <option v-for="category in categories" :key="category.uuid" :value="category.slug">{{ category.name }}</option>
-        </select>
+        <AppFileUpload
+          label="Upload a cover image for your project"
+          bucket="projects"
+          @file:uploaded="project.image = $event"
+          class="mb-4"
+        />
 
-        <label for="soft-cap" class="block font-medium">What is the soft cap of your project? <span class="flex justify-end"><Money :amount="project.softCap" currency="USD" sign="" /></span></label>
-        <input type="range" id="soft-cap" min={0} max="100000" step="25000" className="range range-lg text-white" v-model="project.softCap" />
-        <div class="w-full flex justify-between text-xs px-2">
-          <span>|</span>
-          <span>|</span>
-          <span>|</span>
-          <span>|</span>
-          <span>|</span>
+        <FormField
+          label="Which category does your project fit in?"
+          as="select"
+          name="categoryUuid"
+          hint="Selecting a fitting category ensures the right people find your project."
+        >
+          <option disabled selected :value="null">Pick one</option>
+          <option
+            v-for="category in categories"
+            :key="category.uuid"
+            :value="category.uuid"
+          >
+            {{ category.name }}
+          </option>
+        </FormField>
+
+        <FormField
+          label="What is the soft cap of your project?"
+          name="softCap"
+          type="range"
+          min="0"
+          max="100000"
+          class="range"
+          step="5000"
+          hint="Soft cap is the minimum amount of money that you need to raise
+                in order to start your project."
+        >
+          <template #label-text-alt>
+            <Money :amount="project.softCap" />
+          </template>
+
+          <template #after-input>
+            <div class="flex justify-between w-full px-2 text-xs">
+              <span>|</span>
+              <span>|</span>
+              <span>|</span>
+              <span>|</span>
+              <span>|</span>
+            </div>
+            <div class="flex justify-between w-full px-2 text-xs">
+              <span><Money :amount="10000" /></span>
+              <span><Money :amount="25000" /></span>
+              <span><Money :amount="50000" /></span>
+              <span><Money :amount="75000" /></span>
+              <span><Money :amount="100000" /></span>
+            </div>
+          </template>
+        </FormField>
+
+        <FormField
+          label="What is the hard cap of your project?"
+          name="hardCap"
+          type="range"
+          min="0"
+          max="100000"
+          class="range"
+          step="5000"
+          hint="Hard cap is the maximum amount of money that you need to raise
+                in order to start your project."
+        >
+          <template #label-text-alt>
+            <Money :amount="project.hardCap" />
+          </template>
+
+          <template #after-input>
+            <div class="flex justify-between w-full px-2 text-xs">
+              <span>|</span>
+              <span>|</span>
+              <span>|</span>
+              <span>|</span>
+              <span>|</span>
+            </div>
+            <div class="flex justify-between w-full px-2 text-xs">
+              <span><Money :amount="10000" /></span>
+              <span><Money :amount="25000" /></span>
+              <span><Money :amount="50000" /></span>
+              <span><Money :amount="75000" /></span>
+              <span><Money :amount="100000" /></span>
+            </div>
+          </template>
+        </FormField>
+
+        <FormField
+          label="When should your project funding start?"
+          name="startsAt"
+          type="date"
+          hint="This is the date that your project will open to start receiving funds."
+        />
+
+        <FormField
+          label="When should your project funding end?"
+          name="finishesAt"
+          type="date"
+          hint="This is the date that your project will stop receiving funds."
+        />
+
+        <button class="w-full btn btn-primary">Publish your project</button>
+      </form>
+      <div class="col-span-4">
+        <div>
+          <ClientOnly>
+            <ProjectCard
+              :project="{
+                ...project,
+                backers: Math.floor(Math.random() * 1000),
+                pledged: 0,
+                funded: Math.floor(Math.random() * 10000).toString(),
+                finishesAt: project.finishesAt.toString(),
+                startsAt: project.startsAt.toString(),
+                title: project.title || 'Your title here',
+                image: project.image || 'https://placehold.co/500x320',
+                excerpt: project.description
+                  ? `${project?.description?.substring(0, 130)}...`
+                  : 'This is a description of your project. You can change it in the project. You have up to 130 characters to describe your project.',
+                categoryUuid: project.categoryUuid,
+                createdAt: new Date().toString(),
+                lastUpdatedAt: new Date().toString(),
+                hardCap: project.hardCap.toString(),
+                softCap: project.softCap.toString(),
+                uuid: '',
+              }"
+              :category-name="category?.name ?? 'Some Category'"
+            />
+          </ClientOnly>
         </div>
-        <div class="w-full flex justify-between text-xs px-2">
-          <span>$10,000.00</span>
-          <span>$25,000.00</span>
-          <span>$50,000.00</span>
-          <span>$75,000.00</span>
-          <span>$100,000.00</span>
-        </div>
-
-        <label for="hard-cap" class="block font-medium">What is the hard cap of your project?
-          <span class="flex justify-end">
-            <Money :amount="project.hardCap" currency="USD" sign="" />
-          </span>
-        </label>
-        <input type="range" id="hard-cap" min={0} max="100000" step="25000" className="range range-lg text-white" v-model="project.hardCap" />
-        <div class="w-full flex justify-between text-xs px-2">
-          <span>|</span>
-          <span>|</span>
-          <span>|</span>
-          <span>|</span>
-          <span>|</span>
-        </div>
-        <div class="w-full flex justify-between text-xs px-2">
-          <span>$10,000.00</span>
-          <span>$25,000.00</span>
-          <span>$50,000.00</span>
-          <span>$75,000.00</span>
-          <span>$100,000.00</span>
-        </div>
-
-        <div class="grid md:grid-cols-2 md:gap-6">
-          <div class="relative z-0 w-full mb-6 group">
-            <label for="start-date" class="block font-medium">Start Date:</label>
-            <input type="date" id="start-date" name="start-date" required class="w-full p-2 border rounded-2xl" v-model="project.startDate">
-          </div>
-          <div class="relative z-0 w-full mb-6 group">
-            <label for="end-date" class="block font-medium">End Date:</label>
-            <input type="date" id="end-date" name="end-date" required class="w-full p-2 border rounded-2xl" v-model="project.endDate">
-          </div>
-        </div>
-
-      <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-2xl hover:bg-blue-600">Create Project</button>
-    </form>
-</div></template>
+      </div>
+    </div>
+  </div>
+</template>
