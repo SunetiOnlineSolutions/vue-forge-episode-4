@@ -36,7 +36,7 @@ async function handleChange(e: Event) {
 }
 </script>
 <template>
-  <div class="w-full max-w-full form-control">
+  <div class="w-full max-w-md form-control">
     <label v-if="label" class="label">
       <span class="label-text">{{ label }}</span>
     </label>
