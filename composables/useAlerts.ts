@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid";
+import { nanoid } from "nanoid"; 
 interface AlertOptions {
     type?: "success" | "error" | "info" | "warning";
     title?: string;
@@ -11,22 +11,26 @@ interface Alert extends AlertOptions {
 }
 const TIMEOUT = 5000;
 export const useAlerts = () => {
-    const alerts = ref<Alert[]>("appAlerts", () => []);
+    const alerts: Ref<Alert[]> = useState('alerts', () => [])
+
     function dismiss(idOrAlert: string | Alert) {
-        const id = typeof idOrAlert === "string" ? idOrAlert : idOrAlert.id;
+        const id = typeof idOrAlert === "object" ? idOrAlert.id : idOrAlert;
         alerts.value = alerts.value.filter((alert) => alert.id !== id);
     }
-    function addAlert(message: string, options: AlertOptions) {
+
+    function addAlert(message: string, options: AlertOptions = {}) {
         const id = nanoid();
-        const Alert = {
+
+        const alert: Alert = {
             id,
             message,
             type: options.type || "info",
             dismissiable: options.dismissiable || true,
-            timeout: options.timeout || 5000,
+            timeout: options.timeout || TIMEOUT,
             title: options.title || "",
         }
         alerts.value.push(alert);
+
         if(alert.timeout) {
             setTimeout(() => dismiss(id), alert.timeout);
         }
