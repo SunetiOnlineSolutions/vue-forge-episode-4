@@ -60,6 +60,7 @@ const category = computed(() => {
 const {success, error} = useAlerts();
 
 const submitForm = handleSubmit(async (values) => {
+  alert(JSON.stringify(values, null, 2));
   success("Project created");
 });
 </script>
