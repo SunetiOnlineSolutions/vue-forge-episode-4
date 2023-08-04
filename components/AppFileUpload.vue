@@ -5,6 +5,7 @@ const props = defineProps<{
   bucket: string;
   hint?: string;
   label?: string;
+  errorMessage?: string;
 }>();
 
 const emit = defineEmits<{
@@ -36,15 +37,20 @@ async function handleChange(e: Event) {
 }
 </script>
 <template>
-  <div class="w-full max-w-md form-control">
-    <label v-if="label" class="label">
-      <span class="label-text">{{ label }}</span>
+  <div class="w-full max-w-full form-control">
+    <label class="label">
+      <span  v-if="label" class="label-text">{{ label }}</span>
+
+      <span v-if="errorMessage" class="text-xs text-red-600">
+        {{ errorMessage }}
+      </span>
     </label>
     <input
       @change="handleChange"
       ref="fileInput"
       type="file"
       class="w-full file-input file-input-bordered"
+      :class="{ 'file-input-error': errorMessage }"
     />
     <label v-if="hint" class="label">
       <span class="text-gray-400 label-text-alt">{{ hint }}</span>
